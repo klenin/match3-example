@@ -36,6 +36,7 @@ class UI:
         self.set_state(State.NORMAL)
         self.flying_time = 0
         self.flying = dict()
+        self.thinking_start = 0
 
     @staticmethod
     def pos_to_cell(pos):
@@ -106,15 +107,18 @@ FPS = 60
 #rnd.seed(273426)
 pg.init()
 clock = pg.time.Clock()
-field = Field(LEVELS[2])
+field = Field(LEVELS[2], rnd.Random())
+#field = History.load_field(LEVELS[2], "2020-11-08_19_09_04")
 ui = UI(field)
 ai = AI(field)
-history = History("Vasya", field)
+history = History("Vasya", field, level=2)
 
 mainloop = True
+global_time = 0
 
 while mainloop:
     delta = clock.tick(FPS)
+    global_time += delta / 1000
     
     for event in pg.event.get():
         if event.type == pg.QUIT or event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
@@ -146,6 +150,7 @@ while mainloop:
         
     if ui.state == State.SWAPPING and ui.state_time > ui.flying_time:
         history.moves.append((v2int(ui.cell_down), v2int(ui.selected_cell)))
+        history.times.append(global_time - ui.thinking_start)
         field.apply_move(ui.cell_down, ui.selected_cell)
         field.explode_all()
         ui.start_falling()
@@ -158,6 +163,7 @@ while mainloop:
             ui.set_state(State.NORMAL)
             ui.flying.clear()
             ui.flying_time = 0
+            ui.thinking_start = global_time
 
     ui.state_time += delta / 1000
     ui.draw()

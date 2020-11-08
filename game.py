@@ -4,6 +4,7 @@ import random as rnd
 import math
 import copy
 import json
+import datetime
 
 class CellType:
     EMPTY = 0
@@ -17,18 +18,31 @@ class CellType:
 def v2int(v): return int(v.x), int(v.y)
 
 class History:
-    def __init__(self, name, field):
+    def __init__(self, name, field, level):
         self.name = name
         self.field = copy.deepcopy(field)
         self.moves = []
+        self.times = []
+        self.level = level
 
     def save(self):
-        with open("history.log", "w") as f:
-            f.write(json.dumps({
+        d = datetime.datetime.now()
+        ds = d.strftime("%Y-%m-%d_%H-%M-%S")
+        with open(f"log/{self.name}_{ds}.log", "w") as f:
+            json.dump({
                 'name': self.name,
+                'level': self.level,
+                'candidates': self.field.candidates,
                 'field': self.field.cells,
                 'moves': self.moves,
-            }, indent=2))
+                'times': self.times,
+            }, f)
+
+    @staticmethod
+    def load_field(level, filename):
+        with open(f"log/{filename}.log") as f:
+            j = json.load(f)
+            return Field(level, rnd.Random(), candidates=j['candidates'])
 
 class Level:
     def __init__(self, name, prob):
@@ -70,11 +84,13 @@ class Field:
         CellType.BERYL: 1,
     }
 
-    def __init__(self, level):
+    def __init__(self, level, rnd, candidates=None):
         self.score = 0
         self.turn = 1
         self.level = level
         self.weights = [ self.level.prob[t] for t in CellType.NORMAL_SET ]
+        self.candidates = candidates or rnd.choices(CellType.NORMAL_SET, weights=self.weights, k=1000)
+        self.candidate_idx = 0
         self.cells = self._full_random()
         while self.explode_all():
             self.apply_fall(self.make_fall())
@@ -87,9 +103,16 @@ class Field:
             any, _ = self.maybe_explode_all()
             if not any: break
     
+    def get_candidates(self, n):
+        r = []
+        for _ in range(n):
+            r.append(self.candidates[self.candidate_idx])
+            self.candidate_idx = (self.candidate_idx + 1) % len(self.candidates)
+        return r
+
     def _full_random(self):
         return [
-            rnd.choices(CellType.NORMAL_SET, weights=self.weights, k=Field.SIZE)
+            self.get_candidates(Field.SIZE)
             for _ in range(Field.SIZE) ]
 
     def fill(self):
@@ -98,8 +121,7 @@ class Field:
             for x in range(Field.SIZE):
                 if self.cells[y][x] == CellType.EMPTY:
                     cnt += 1
-        w = self.weights if self.turn < 3 else [1, 1, 1, 0, 0] 
-        new_cells = rnd.choices(CellType.NORMAL_SET, weights=w, k=cnt)
+        new_cells = self.get_candidates(cnt)
         cnt = 0
         for y in range(Field.SIZE):
             for x in range(Field.SIZE):
