@@ -13,7 +13,9 @@ class CellType:
     DIAMOND = 3
     AMBER = 4
     BERYL = 5
-    NORMAL_SET = [RUBY, EMERALD, DIAMOND, AMBER, BERYL]
+    ONYX = 6
+    QUARTZ = 7
+    NORMAL_SET = [RUBY, EMERALD, DIAMOND, AMBER, BERYL, ONYX, QUARTZ]
 
 def v2int(v): return int(v.x), int(v.y)
 
@@ -40,7 +42,7 @@ class History:
 
     @staticmethod
     def load_field(level, filename):
-        with open(f"log/{filename}.log") as f:
+        with open(filename) as f:
             j = json.load(f)
             return Field(level, rnd.Random(), candidates=j['candidates'])
 
@@ -56,6 +58,8 @@ LEVELS = [
         CellType.DIAMOND: 1,
         CellType.AMBER: 1,
         CellType.BERYL: 0,
+        CellType.ONYX: 0,
+        CellType.QUARTZ: 0,
     }),
     Level("L2", {
         CellType.RUBY: 1,
@@ -63,6 +67,8 @@ LEVELS = [
         CellType.DIAMOND: 1,
         CellType.AMBER: 1,
         CellType.BERYL: 0,
+        CellType.ONYX: 0,
+        CellType.QUARTZ: 0,
     }),
     Level("L3", {
         CellType.RUBY: 1,
@@ -70,7 +76,27 @@ LEVELS = [
         CellType.DIAMOND: 1,
         CellType.AMBER: 1,
         CellType.BERYL: 1,
+        CellType.ONYX: 0,
+        CellType.QUARTZ: 0,
     }),
+    Level("L4", {
+        CellType.RUBY: 1,
+        CellType.EMERALD: 1,
+        CellType.DIAMOND: 1,
+        CellType.AMBER: 1,
+        CellType.BERYL: 1,
+        CellType.ONYX: 1,
+        CellType.QUARTZ: 0,
+    }),
+    # Level("L5", {
+    #     CellType.RUBY: 1,
+    #     CellType.EMERALD: 1,
+    #     CellType.DIAMOND: 1,
+    #     CellType.AMBER: 1,
+    #     CellType.BERYL: 1,
+    #     CellType.ONYX: 1,
+    #     CellType.QUARTZ: 1,
+    # }),
 ]
 
 class Field:
@@ -82,6 +108,8 @@ class Field:
         CellType.DIAMOND: 3,
         CellType.AMBER: 2,
         CellType.BERYL: 1,
+        CellType.ONYX: 1,
+        CellType.QUARTZ: 1,
     }
 
     def __init__(self, level, rnd, candidates=None):
@@ -104,6 +132,8 @@ class Field:
             if not any: break
     
     def get_candidates(self, n):
+        #if self.turn >= 5:
+        #    return rnd.choices(CellType.NORMAL_SET, weights=[1, 1, 0.5, 0, 0], k=n)
         r = []
         for _ in range(n):
             r.append(self.candidates[self.candidate_idx])
@@ -242,10 +272,10 @@ class AI:
     def make_all_moves(self):
         moves = []
         for y in range(Field.SIZE - 1): 
-            for x in range(Field.SIZE - 1):
+            for x in range(1, Field.SIZE):
                 p = Vector2(x, y)
-                if self.field.can_swap(p, Vector2(x + 1, y)):
-                    moves.append((p, Vector2(x + 1, y)))
+                if self.field.can_swap(p, Vector2(x - 1, y)):
+                    moves.append((p, Vector2(x - 1, y)))
                 if self.field.can_swap(p, Vector2(x, y + 1)):
                     moves.append((p, Vector2(x, y + 1)))
         return moves

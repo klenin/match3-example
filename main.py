@@ -24,6 +24,8 @@ class UI:
         CellType.DIAMOND: (0, 0, 255),
         CellType.AMBER: (255, 150, 100),
         CellType.BERYL: (128, 200, 255),
+        CellType.ONYX: (0, 0, 50),
+        CellType.QUARTZ: (255, 255, 0),
     }
     SWAP_TIME = 0.3
     FALL_TIME = 0.4
@@ -107,8 +109,8 @@ FPS = 60
 #rnd.seed(273426)
 pg.init()
 clock = pg.time.Clock()
-field = Field(LEVELS[2], rnd.Random())
-#field = History.load_field(LEVELS[2], "2020-11-08_19_09_04")
+field = Field(LEVELS[3], rnd.Random())
+#field = History.load_field(LEVELS[3], "level.json")
 ui = UI(field)
 ai = AI(field)
 history = History("Vasya", field, level=2)
